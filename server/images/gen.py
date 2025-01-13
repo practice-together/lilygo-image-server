@@ -20,7 +20,10 @@ def generate_modern_pixel_art(size=500, symbol="π", font_size=None, background_
         "arial.ttf",
         "DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        # Add fonts that support Devanagari
+        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Noto Sans Devanagari Bold.ttf"
     ]
     
     font = None
@@ -33,7 +36,7 @@ def generate_modern_pixel_art(size=500, symbol="π", font_size=None, background_
             
     if font is None:
         font = ImageFont.load_default()
-        print("Warning: Using default font. Install Arial or DejaVuSans for better results.")
+        print("Warning: Using default font. Install Arial, DejaVuSans, or Noto Sans Devanagari for better results.")
 
     # Improved center positioning
     bbox = draw.textbbox((0, 0), symbol, font=font)
@@ -138,3 +141,63 @@ if __name__ == "__main__":
     )
     sigma_art.save("sigma_art.png")
     sigma_art.show()
+    
+    # 6. Devanagari आ
+    aa_art = generate_modern_pixel_art(
+        size=500,
+        symbol="आ",
+        font_size=300,
+        background_color="#FF3366",  # Deep pink
+        text_color="#FFFFFF",        # White
+        y_offset=-5
+    )
+    aa_art.save("devanagari_aa_art.png")
+    aa_art.show()
+    
+    # 7. Beta symbol (β)
+    beta_art = generate_modern_pixel_art(
+        size=500,
+        symbol="β",
+        font_size=350,
+        background_color="#6B5B95",  # Purple
+        text_color="#F0F0F0",        # Light gray
+        y_offset=-10
+    )
+    beta_art.save("beta_art.png")
+    beta_art.show()
+    
+    # 8. Integral symbol (∫)
+    integral_art = generate_modern_pixel_art(
+        size=500,
+        symbol="∫",
+        font_size=400,
+        background_color="#88B04B",  # Green
+        text_color="#FFFFFF",        # White
+        y_offset=0
+    )
+    integral_art.save("integral_art.png")
+    integral_art.show()
+    
+    # 9. Delta square (Δ²)
+    delta_square_art = generate_modern_pixel_art(
+        size=500,
+        symbol="Δ²",
+        font_size=300,
+        background_color="#45B7D1",  # Light blue
+        text_color="#000000",        # Black
+        y_offset=-15
+    )
+    delta_square_art.save("delta_square_art.png")
+    delta_square_art.show()
+    
+    # 10. Ashok Chakra (using ⊗ as approximation)
+    chakra_art = generate_modern_pixel_art(
+        size=500,
+        symbol="⊗",
+        font_size=350,
+        background_color="#FF9933",  # Deep saffron
+        text_color="#000080",        # Navy blue
+        y_offset=-5
+    )
+    chakra_art.save("ashok_chakra_art.png")
+    chakra_art.show()
