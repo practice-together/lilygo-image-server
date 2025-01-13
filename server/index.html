@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lilygo-T-S3 Image Library</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .image-card {
+            position: relative;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .image-card:hover {
+            transform: scale(1.05);
+        }
+
+        .image-card.selected {
+            box-shadow: 0 0 0 3px #3B82F6;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .image-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: #10B981;
+            color: white;
+            transform: translateY(150%);
+            transition: transform 0.3s;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto py-6 px-4">
+            <h1 class="text-3xl font-bold text-gray-900">Lilygo-T-S3 Image Library</h1>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto">
+        <!-- Connection Info Section -->
+        <div class="bg-white shadow rounded-lg my-6 p-6">
+            <div class="flex items-start space-x-6">
+                <!-- Server Info -->
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-2">Server Information</h2>
+                    <div class="bg-gray-50 rounded-md p-4 flex items-center space-x-3">
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-500">Server Address:</p>
+                            <p class="text-md font-mono bg-gray-100 p-1 rounded" id="serverAddress">Loading...</p>
+                        </div>
+                        <button onclick="copyAddress()"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Connection Instructions -->
+                <div class="flex-1">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-2">Connection Instructions</h2>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p>1. Connect your Lilygo-T-S3 to the same WiFi network</p>
+                        <p>2. Use these endpoints in your code:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-xs">
+                            <li><code class="bg-gray-100 px-1 rounded">/api/selectedImage</code> - Poll this to check
+                                selected image</li>
+                            <li><code class="bg-gray-100 px-1 rounded">/api/imageData?image=filename.jpg</code> - Get
+                                image data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Grid -->
+        <div class="image-grid" id="imageGrid"></div>
+    </main>
+
+    <script>
+        // Function to copy server address
+        function copyAddress() {
+            const addressEl = document.getElementById('serverAddress');
+            navigator.clipboard.writeText(addressEl.textContent)
+                .then(() => {
+                    const btn = addressEl.nextElementSibling;
+                    btn.textContent = 'Copied!';
+                    btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    btn.classList.add('bg-green-500');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('bg-green-500');
+                        btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    }, 2000);
+                });
+        }
+
+        // Function to load server information
+        async function loadServerInfo() {
+            try {
+                const response = await fetch('/api/serverInfo');
+                const info = await response.json();
+                document.getElementById('serverAddress').textContent = `http://${info.ip}:${info.port}`;
+            } catch (error) {
+                console.error('Error loading server info:', error);
+                document.getElementById('serverAddress').textContent = 'Error loading server address';
+            }
+        }
+    </script>
+    <div class="notification" id="notification">
+        Image selected successfully!
+    </div>
+
+    <script>
+        let selectedImageElement = null;
+
+        async function loadImages() {
+            try {
+                const response = await fetch('/api/images');
+                const images = await response.json();
+                const imageGrid = document.getElementById('imageGrid');
+
+                images.forEach(image => {
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.innerHTML = `
+                        <img src="/images/${image}" alt="${image}">
+                        <div class="image-name">${image}</div>
+                    `;
+
+                    card.addEventListener('click', () => selectImage(card, image));
+                    imageGrid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading images:', error);
+            }
+        }
+
+        async function selectImage(element, imageName) {
+            try {
+                // Remove previous selection
+                if (selectedImageElement) {
+                    selectedImageElement.classList.remove('selected');
+                }
+
+                // Add selection to clicked image
+                element.classList.add('selected');
+                selectedImageElement = element;
+
+                // Send selection to server
+                const response = await fetch('/api/selectImage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageName }),
+                });
+
+                if (response.ok) {
+                    showNotification();
+                }
+            } catch (error) {
+                console.error('Error selecting image:', error);
+            }
+        }
+
+        function showNotification() {
+            const notification = document.getElementById('notification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // Load images when page loads
+        window.addEventListener('load', () => {
+            loadImages();
+            loadServerInfo();
+        });
+    </script>
+</body>
+
+</html>
